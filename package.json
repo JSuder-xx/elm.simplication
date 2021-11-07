@@ -1,0 +1,23 @@
+{
+  "name": "elm.simplication",
+  "version": "0.1.0",
+  "description": "Simple logic implication visualizer as a communication aide.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "elm-test"
+  },
+  "author": "John Suder",
+  "license": "ISC",
+  "devDependencies": {
+    "elm": "^0.19.1-5",
+    "elm-format": "^0.8.5",
+    "elm-test": "^0.19.1-revision7",
+    "uglifyjs": "^2.4.11"
+  },
+  "dependencies": {
+    "viz.js": "^2.1.2"
+  }
+}

@@ -1,0 +1,41 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>S.Implication</title>
+  <meta name="description" content="Simple logic implication visualizer as a communication aide..">
+  <meta name="keywords" content="Logic, Implication, Visualizer, Communication, Boolean Logic, Logical Implications">
+  <meta name="author" content="John Suder">
+  <script src="simplification.0.1.0.min.js"></script>
+</head>
+<body>
+  <div id="elm-app"></div>
+  <div id="diagram">Waiting for graphing library...</div>
+  <script type="text/javascript">
+    const app = Elm.Main.init({
+        node: document.getElementById('elm-app')
+    });
+
+    let renderDOT = _ => {}; 
+    app.ports.sendDOT.subscribe(dot => {
+      renderDOT(dot);
+    });
+  </script>   
+  <script src="viz.js"></script>
+  <script src="full.render.js"></script>         
+  <script type="text/javascript">
+    const viz = new Viz();
+    const diagramElement = document.getElementById('diagram');
+    diagramElement.innerHTML = "";
+    renderDOT = dot => {
+      viz.renderString(dot, { engine: 'dot', format: 'svg'})
+            .then(html => {
+              diagramElement.innerHTML = html;
+            })
+            .catch(err => {
+              console.error('Error rendering', dot, err);
+            });
+    };
+  </script>
+</body>
+</html>
