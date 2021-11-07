@@ -12,6 +12,8 @@ found itself in an unending confusion loop due to an inability to remember and g
 seemingly simple logical statements ex. four propositions, two implications with a
 conjunction (AND) and a disjunction (OR).
 
+[Try it online](https://simplication.z22.web.core.windows.net/)
+
 ## NPM Package Basics
 
 ### Build
