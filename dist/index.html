@@ -16,7 +16,10 @@
         node: document.getElementById('elm-app')
     });
 
-    let renderDOT = _ => {}; 
+    let dotStringReceivedBeforeVizInit = null;
+    let renderDOT = dot => {
+      dotStringReceivedBeforeVizInit = dot;
+    }; 
     app.ports.sendDOT.subscribe(dot => {
       renderDOT(dot);
     });
@@ -36,6 +39,9 @@
               console.error('Error rendering', dot, err);
             });
     };
+    if (!!dotStringReceivedBeforeVizInit) {
+      renderDOT(dotStringReceivedBeforeVizInit);
+    }
   </script>
 </body>
 </html>
