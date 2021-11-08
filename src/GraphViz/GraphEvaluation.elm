@@ -75,6 +75,9 @@ nodeToString (Node nodeId ( text, ( evaluation, nodeType ) )) =
 
                 ImplicationNode ->
                     "rarrow"
+
+                AssertionNode ->
+                    "octagon"
         }
 
 

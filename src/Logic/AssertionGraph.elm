@@ -12,6 +12,7 @@ type NodeType
     = BooleanOperatorNode
     | ImplicationNode
     | PropositionNode
+    | AssertionNode
 
 
 type alias State =
@@ -48,6 +49,10 @@ insertNodeType nodeType operator expression =
                     Data.Graph.insertNode ( operator, ( BE.evaluate symbolTable expression, nodeType ) ) graph
             in
             ( newNodeId, ( symbolTable, newGraph, propositionDict ) )
+
+
+insertAssertion expr =
+    insertNodeType AssertionNode "Assert" expr
 
 
 insertOperator : String -> BooleanExpression -> StateM NodeId
@@ -136,8 +141,26 @@ toUnit =
 assertionS : Assertion -> StateM ()
 assertionS assertion =
     case assertion of
-        TruthOfProposition p _ ->
-            insertPropositionIfNotExists p |> toUnit
+        TruthOfProposition p positive ->
+            let
+                expr =
+                    Proposition p
+                        |> (if positive then
+                                identity
+
+                            else
+                                Not
+                           )
+            in
+            insertAssertion expr
+                |> S.andThen
+                    (\assertNodeId ->
+                        insertConsequent ( p, positive )
+                            |> S.andThen
+                                (\propNodeId ->
+                                    insertEdge assertNodeId propNodeId
+                                )
+                    )
 
         Implication expr consequents ->
             -- Expression node
