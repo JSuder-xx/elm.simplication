@@ -1,7 +1,7 @@
 node_modules
 dist/full.render.js
 dist/viz.js
-dist/simplification.0.1.0.min.js
+dist/simplification*.js
 # elm-package generated files
 elm-stuff
 # elm-repl generated files
