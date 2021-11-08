@@ -1,4 +1,4 @@
-# Simplication
+# S.Implication (Simple Implication)
 
 Simple logic implication visualizer as a communication aide.
 
