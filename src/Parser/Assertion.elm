@@ -9,10 +9,7 @@ import Parser.Tokens as Tokens exposing (whitespace)
 
 truthOfProposition : Parser Assertion
 truthOfProposition =
-    succeed TruthOfProposition
-        |= Tokens.proposition
-        |. Tokens.is
-        |= Tokens.boolean
+    consequent |> Parser.map (\( p, t ) -> TruthOfProposition p t)
 
 
 consequent : Parser ( String, Bool )
@@ -32,7 +29,7 @@ consequentHelp : List ( String, Bool ) -> ( String, Bool ) -> Parser (List ( Str
 consequentHelp consequents currentConsequent =
     oneOf
         [ succeed identity
-            |. Tokens.and
+            |. Tokens.comma
             |= consequent
             |> andThen (\newConsequent -> consequentHelp (currentConsequent :: consequents) newConsequent)
         , Parser.lazy <| \_ -> succeed <| List.reverse <| currentConsequent :: consequents

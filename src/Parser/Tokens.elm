@@ -1,4 +1,4 @@
-module Parser.Tokens exposing (and, boolean, ifP, is, leftParen, not, or, proposition, rightParen, thenP, whitespace)
+module Parser.Tokens exposing (and, comma, ifP, is, leftParen, not, or, proposition, rightParen, thenP, whitespace)
 
 import Parser exposing ((|.), (|=), Parser, Problem(..), keyword, oneOf, succeed, symbol, variable)
 import Set
@@ -41,7 +41,7 @@ whitespace =
 
 reserved : Set.Set String
 reserved =
-    Set.fromList [ "True", "true", "False", "false", "not", "and", "or", "is", "if", "then" ]
+    Set.fromList [ "not", "and", "or", "is", "if", "then" ]
 
 
 proposition : Parser String
@@ -51,17 +51,6 @@ proposition =
         , inner = \c -> Char.isAlphaNum c || (c == '_') || (c == '-')
         , reserved = reserved
         }
-        |. whitespace
-
-
-boolean : Parser Bool
-boolean =
-    oneOf
-        [ succeed True |. keyword "True"
-        , succeed True |. keyword "true"
-        , succeed False |. keyword "False"
-        , succeed False |. keyword "false"
-        ]
         |. whitespace
 
 
@@ -108,3 +97,8 @@ leftParen =
 rightParen : Parser ()
 rightParen =
     symbol ")" |. whitespace
+
+
+comma : Parser ()
+comma =
+    symbol "," |. whitespace

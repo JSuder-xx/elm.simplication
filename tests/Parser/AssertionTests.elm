@@ -24,27 +24,27 @@ suite =
             in
             [ test "fails on an empty string" <|
                 expectFailure ""
-            , parsesCorrectly "x is True" <|
+            , parsesCorrectly "x" <|
                 TruthOfProposition "x" True
-            , parsesCorrectly "# This is a comment\nx is True" <|
+            , parsesCorrectly "# This is a comment\nx" <|
                 TruthOfProposition "x" True
-            , parsesCorrectly "x is True\n# This is a comment" <|
+            , parsesCorrectly "x\n# This is a comment" <|
                 TruthOfProposition "x" True
-            , parsesCorrectly "y is False" <|
+            , parsesCorrectly "not y" <|
                 TruthOfProposition "y" False
             , parsesCorrectly "if x then y" <|
                 Implication (Proposition "x") [ ( "y", True ) ]
-            , parsesCorrectly "if x then y and z" <|
+            , parsesCorrectly "if x then y, z" <|
                 Implication (Proposition "x") [ ( "y", True ), ( "z", True ) ]
-            , parsesCorrectly "if x then q and r and s" <|
+            , parsesCorrectly "if x then q, r, s" <|
                 Implication (Proposition "x") [ ( "q", True ), ( "r", True ), ( "s", True ) ]
-            , parsesCorrectly "if x then q and not r and s" <|
+            , parsesCorrectly "if x then q, not r, s" <|
                 Implication (Proposition "x") [ ( "q", True ), ( "r", False ), ( "s", True ) ]
-            , parsesCorrectly "if x or y then q and not r" <|
+            , parsesCorrectly "if x or y then q, not r" <|
                 Implication (Or [ Proposition "x", Proposition "y" ]) [ ( "q", True ), ( "r", False ) ]
-            , parsesCorrectly "if not x and not y then q and not r" <|
+            , parsesCorrectly "if not x and not y then q, not r" <|
                 Implication (And [ Not <| Proposition "x", Not <| Proposition "y" ]) [ ( "q", True ), ( "r", False ) ]
-            , parsesCorrectly "if (not x and not y) or (a and b) then not q and not r" <|
+            , parsesCorrectly "if (not x and not y) or (a and b) then not q, not r" <|
                 Implication
                     (Or
                         [ And [ Not <| Proposition "x", Not <| Proposition "y" ]
@@ -66,11 +66,11 @@ suite =
             in
             [ test "fails on an empty string" <|
                 expectFailure ""
-            , parsesCorrectly "x is True" <|
+            , parsesCorrectly "x" <|
                 [ TruthOfProposition "x" True ]
-            , parsesCorrectly "x is True y is False" <|
+            , parsesCorrectly "x not y" <|
                 [ TruthOfProposition "x" True, TruthOfProposition "y" False ]
-            , parsesCorrectly "x is True\ny is False" <|
+            , parsesCorrectly "x\nnot y" <|
                 [ TruthOfProposition "x" True, TruthOfProposition "y" False ]
             ]
         ]
