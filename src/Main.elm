@@ -2,8 +2,8 @@ port module Main exposing (main)
 
 import Browser
 import GraphViz.GraphEvaluation exposing (Freshness(..))
-import Html exposing (Html, div, li, p, text, textarea, ul)
-import Html.Attributes exposing (cols, rows, style, value)
+import Html exposing (Html, div, li, nav, p, text, textarea, ul)
+import Html.Attributes exposing (cols, rows, style, target, value)
 import Html.Events exposing (onClick, onInput)
 import Logic.AssertionExamples exposing (examples)
 import Logic.AssertionGraph
@@ -103,26 +103,61 @@ exampleLink ( caption, example ) =
         [ Html.text caption ]
 
 
+topMenuBarView : Html a
+topMenuBarView =
+    let
+        menuLink caption url =
+            Html.a
+                [ target "_blank"
+                , Html.Attributes.href url
+                , style "float" "left"
+                , style "color" "white"
+                , style "text-align" "center"
+                , style "padding" "10px 16px"
+                , style "text-decoration" "none"
+                , style "font-size" "14px"
+                ]
+                [ text caption ]
+    in
+    nav
+        [ style "position" "fixed"
+        , style "top" "0"
+        , style "height" "36px"
+        , style "width" "100%"
+        , style "background-color" "#333"
+        , style "overflow" "hidden"
+        , style "font-family" "sans-serif"
+        ]
+        [ menuLink "My Home Page" "https://jsuder-xx.github.io"
+        , menuLink "On GitHub" "https://github.com/JSuder-xx/elm.simplication"
+        ]
+
+
 view : Model -> Html Msg
 view { assertions, errors } =
     div []
-        [ div [ style "margin-bottom" "8px" ]
-            (Html.span [ style "margin-right" "8px" ] [ text "Examples:" ] :: (examples |> List.map exampleLink))
-        , div [ style "display" "flex" ]
-            [ div []
-                [ textarea
-                    [ rows 16
-                    , cols 90
-                    , style "background-color" "black"
-                    , style "font-weight" "bold"
-                    , style "color" "#80ffd0"
-                    , value assertions
-                    , onInput UpdateAssertions
+        [ topMenuBarView
+        , div
+            [ style "margin-top" "37px" ]
+            [ div [ style "margin-bottom" "8px" ]
+                (Html.span [ style "margin-right" "8px" ] [ text "Examples:" ] :: (examples |> List.map exampleLink))
+            , div [ style "display" "flex" ]
+                [ div []
+                    [ textarea
+                        [ rows 16
+                        , cols 90
+                        , style "background-color" "black"
+                        , style "font-weight" "bold"
+                        , style "color" "#80ffd0"
+                        , style "margin-left" "6px"
+                        , value assertions
+                        , onInput UpdateAssertions
+                        ]
+                        []
                     ]
-                    []
+                , errors
+                    |> Maybe.map errorsView
+                    |> Maybe.withDefault emptyDiv
                 ]
-            , errors
-                |> Maybe.map errorsView
-                |> Maybe.withDefault emptyDiv
             ]
         ]
