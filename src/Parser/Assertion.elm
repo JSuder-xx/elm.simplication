@@ -2,7 +2,7 @@ module Parser.Assertion exposing (assertion, assertions)
 
 import Logic.Assertion exposing (Assertion(..))
 import Logic.BooleanExpression exposing (BooleanExpression(..))
-import Parser exposing ((|.), (|=), Parser, Step(..), andThen, oneOf, succeed)
+import Parser exposing ((|.), (|=), Parser, Step(..), andThen, end, oneOf, succeed)
 import Parser.BooleanExpression
 import Parser.Tokens as Tokens exposing (whitespace)
 
@@ -64,5 +64,5 @@ assertionsHelp : List Assertion -> Parser (Step (List Assertion) (List Assertion
 assertionsHelp assertionsAccum =
     oneOf
         [ assertion |> Parser.map (\a -> Loop (a :: assertionsAccum))
-        , succeed <| Done <| List.reverse assertionsAccum
+        , end |> Parser.map (\_ -> Done <| List.reverse assertionsAccum)
         ]

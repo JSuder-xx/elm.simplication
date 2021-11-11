@@ -1,12 +1,12 @@
 module Parser.Tokens exposing (and, comma, ifP, is, leftParen, not, or, proposition, rightParen, thenP, whitespace)
 
-import Parser exposing ((|.), (|=), Parser, Problem(..), keyword, oneOf, succeed, symbol, variable)
+import Parser exposing ((|.), (|=), Parser, Problem(..), chompUntil, chompWhile, keyword, oneOf, succeed, symbol, variable)
 import Set
 
 
 lineComment : Parser ()
 lineComment =
-    Parser.lineComment "#"
+    symbol "#" |. chompWhile (\c -> c /= '\n')
 
 
 loopIfProgress : Parser a -> Int -> Parser (Parser.Step Int ())
