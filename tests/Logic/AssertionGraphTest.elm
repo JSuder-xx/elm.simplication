@@ -39,6 +39,11 @@ bProp =
     prop "b"
 
 
+assert : Evaluation -> ( String, ( Evaluation, NodeType ) )
+assert e =
+    ( "Assert", ( e, AssertionNode ) )
+
+
 suite : Test
 suite =
     describe "AssertionGraph.fromAssertions" <|
@@ -50,47 +55,49 @@ suite =
                 in
                 Expect.equal expectedNodes actualNodes
 
-            expectEdges assertions expectedEdges _ =
+            expectEdges assertions expectedEdgeCount _ =
                 let
-                    actualEdges =
-                        fromAssertions assertions |> edges
+                    actualEdgeCount =
+                        fromAssertions assertions |> edges |> List.length
                 in
-                Expect.equal expectedEdges actualEdges
+                Expect.equal expectedEdgeCount actualEdgeCount
         in
         [ test "a single proposition yields one node" <|
-            expectNodes [ TruthOfProposition "x" True ] [ ( "x", ( ETrue, PropositionNode ) ) ]
-        , test "a single proposition yields no edges" <|
-            expectEdges [ TruthOfProposition "x" True ] []
+            expectNodes [ TruthOfProposition "a" True ] [ assert ETrue, aProp ETrue ]
+        , test "a single proposition yields oneo edges" <|
+            expectEdges [ TruthOfProposition "x" True ] 1
         , test "an implication from a to b yields three nodes 'a', 'then', 'b' of unknown" <|
             expectNodes [ Implication (Proposition "a") [ ( "b", True ) ] ] [ aProp EUnknown, thenOp EUnknown, bProp EUnknown ]
+        , test "an implication from a to b yields two edges" <|
+            expectEdges [ Implication (Proposition "a") [ ( "b", True ) ] ] 2
         , test "an implication from a to b and a stated to be True yields two nodes of ETrue" <|
             expectNodes
                 [ TruthOfProposition "a" True
                 , Implication (Proposition "a") [ ( "b", True ) ]
                 ]
-                [ aProp ETrue, thenOp ETrue, bProp ETrue ]
+                [ assert ETrue, aProp ETrue, thenOp ETrue, bProp ETrue ]
         , test "an implication from not a to b and a stated to be True" <|
             expectNodes
                 [ TruthOfProposition "a" True
                 , Implication (Not <| Proposition "a") [ ( "b", True ) ]
                 ]
-                [ aProp ETrue, notOp EFalse, thenOp EFalse, bProp EUnknown ]
+                [ assert ETrue, aProp ETrue, notOp EFalse, thenOp EFalse, bProp EUnknown ]
         , test "an implication from not a to b and a stated to be False" <|
             expectNodes
                 [ TruthOfProposition "a" False
                 , Implication (Not <| Proposition "a") [ ( "b", True ) ]
                 ]
-                [ aProp EFalse, notOp ETrue, thenOp ETrue, bProp ETrue ]
+                [ assert ETrue, aProp EFalse, notOp ETrue, notOp ETrue, thenOp ETrue, bProp ETrue ]
         , test "an implication from a to not a and a stated to be true" <|
             expectNodes
                 [ TruthOfProposition "a" True
                 , Implication (Proposition "a") [ ( "a", False ) ]
                 ]
-                [ aProp EContradiction, thenOp EContradiction, notOp EContradiction ]
+                [ assert EContradiction, aProp EContradiction, thenOp EContradiction, notOp EContradiction ]
         , test "an implication from a to not b and a stated to be True yields four nodes" <|
             expectNodes
                 [ TruthOfProposition "a" True
                 , Implication (Proposition "a") [ ( "b", False ) ]
                 ]
-                [ aProp ETrue, thenOp ETrue, bProp EFalse, notOp ETrue ]
+                [ assert ETrue, aProp ETrue, thenOp ETrue, bProp EFalse, notOp ETrue ]
         ]
