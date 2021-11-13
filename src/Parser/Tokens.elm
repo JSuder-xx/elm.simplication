@@ -1,6 +1,6 @@
 module Parser.Tokens exposing (and, comma, ifP, is, leftParen, not, or, proposition, rightParen, thenP, whitespace)
 
-import Parser exposing ((|.), (|=), Parser, Problem(..), chompUntil, chompWhile, keyword, oneOf, succeed, symbol, variable)
+import Parser exposing ((|.), (|=), Parser, Problem(..), chompWhile, keyword, oneOf, succeed, symbol, variable)
 import Set
 
 

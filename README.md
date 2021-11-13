@@ -19,6 +19,7 @@ It seems to me that implication is not universally well understood in the office
 - **Non Engineer** How can you think that `B` is true? I don't think it is.
 - **Engineer** I didn't say anything about the truth of `B` alone; only that if `A` turns out to be true then `B` must also be true based on something we just said. That's important because if `A` turns out to be true then, based on what we said together as a group, `B` must also be true. If it turns out that we learn for a fact that `B` is false then we have a contradiction. This indicates there is an error in our analysis or reasoning; it could just be a lack of precision.
 - **Non Engineer** That is all too much detail and very confusing.
+- **Engineer** (sigh) You are right. That is very confusing. I wish I had a tool that would help me diagram this...
 
 ### Conjunction Confusion
 
@@ -33,7 +34,7 @@ Conjunctions seem to be better understood, but in my experience the addition of 
 
 ### Build
 
-```
+```shell
 npm install
 ./build.sh
 ```
@@ -42,6 +43,6 @@ the above places all assets into /dist.
 
 ### Test
 
-```
+```shell
 elm-test
 ```
