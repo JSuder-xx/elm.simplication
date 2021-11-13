@@ -1,20 +1,56 @@
-module Logic.Assertion exposing (Assertion(..), applyAssertions)
+module Logic.Assertion exposing (Assertion(..), applyAssertions, expandWithModusTollens)
 
 import Dict exposing (Dict)
-import Logic.BooleanExpression as BE exposing (BooleanExpression)
+import Logic.BooleanExpression as BE exposing (BooleanExpression, PropositionTruth, toPropositionTruthConjunctions)
 import Logic.Evaluation as E exposing (Evaluation(..))
+import Maybe exposing (Maybe(..))
+import Maybe.Extra
 
 
 type Assertion
-    = TruthOfProposition String Bool
-    | Implication BooleanExpression (List ( String, Bool ))
+    = AssertProposition String Bool
+    | Implication BooleanExpression (List PropositionTruth)
 
 
 type alias SymbolTable =
     Dict String Evaluation
 
 
-applyProposition : SymbolTable -> ( String, Bool ) -> Maybe SymbolTable
+{-| Modus Tollens is not always possible because the consequent of Implication is a conjunction list of propositions (i.e. it is not a BooleanExpresion).
+-}
+modusTollens : Assertion -> Maybe Assertion
+modusTollens a =
+    case a of
+        Implication be consequents ->
+            toPropositionTruthConjunctions (BE.Not be)
+                |> Maybe.map
+                    (\newConsequents ->
+                        Implication (BE.Not <| BE.fromPrositionTruthConjunctions consequents) newConsequents
+                    )
+
+        _ ->
+            Nothing
+
+
+{-| Expand the assertions with their Modus Tollens counterpart if possible.
+
+In other words `if a then b` would expand to
+
+  - `if a then b`
+  - `if not b then not a`
+
+-}
+expandWithModusTollens : List Assertion -> List Assertion
+expandWithModusTollens =
+    List.concatMap
+        (\a ->
+            Maybe.Extra.cons
+                (modusTollens a)
+                [ a ]
+        )
+
+
+applyProposition : SymbolTable -> PropositionTruth -> Maybe SymbolTable
 applyProposition symbolTable ( prop, truth ) =
     case Dict.get prop symbolTable of
         Nothing ->
@@ -46,7 +82,7 @@ applyProposition symbolTable ( prop, truth ) =
 applyAssertion : SymbolTable -> Assertion -> Maybe SymbolTable
 applyAssertion symbolTable assertion =
     case assertion of
-        TruthOfProposition prop truth ->
+        AssertProposition prop truth ->
             applyProposition symbolTable ( prop, truth )
 
         Implication antecedent consequents ->

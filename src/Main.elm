@@ -1,10 +1,11 @@
 port module Main exposing (main)
 
 import Browser
-import GraphViz.GraphEvaluation exposing (Freshness(..))
-import Html exposing (Html, div, li, nav, p, text, textarea, ul)
-import Html.Attributes exposing (cols, rows, style, target, value)
-import Html.Events exposing (onClick, onInput)
+import GraphViz.GraphEvaluation
+import Html exposing (Html, div, input, label, li, nav, p, text, textarea, ul)
+import Html.Attributes exposing (checked, cols, rows, style, target, type_, value)
+import Html.Events exposing (onCheck, onClick, onInput)
+import Logic.Assertion
 import Logic.AssertionExamples exposing (examples)
 import Logic.AssertionGraph
 import Parser.Assertion
@@ -14,7 +15,7 @@ import Parser.Runner
 main : Program () Model Msg
 main =
     Browser.element
-        { init = \_ -> ( { assertions = "", lastValidDotProducer = Nothing, errors = Nothing }, Cmd.none )
+        { init = init
         , view = view
         , update = update
         , subscriptions = \_ -> Sub.none
@@ -25,47 +26,64 @@ port sendDOT : String -> Cmd msg
 
 
 type alias Model =
-    { assertions : String
+    { assertionsText : String
+    , attemptModusTollens : Bool
     , errors : Maybe (List ( String, List String ))
-    , lastValidDotProducer : Maybe (Freshness -> String)
+    , lastValidAssertions : List Logic.Assertion.Assertion
     }
+
+
+init : a -> ( Model, Cmd msg )
+init _ =
+    ( { assertionsText = ""
+      , attemptModusTollens = False
+      , lastValidAssertions = []
+      , errors = Nothing
+      }
+    , Cmd.none
+    )
 
 
 type Msg
     = UpdateAssertions String
+    | ToggleModusTollens
+
+
+assertionGraph : Bool -> List Logic.Assertion.Assertion -> String
+assertionGraph attemptModusTollens =
+    (if attemptModusTollens then
+        Logic.Assertion.expandWithModusTollens
+
+     else
+        identity
+    )
+        >> Logic.AssertionGraph.fromAssertions
+        >> GraphViz.GraphEvaluation.toDOTString
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg { lastValidDotProducer } =
+update msg ({ lastValidAssertions, attemptModusTollens } as oldModel) =
     case msg of
-        UpdateAssertions assertions ->
-            let
-                dotProducerResult =
-                    Parser.Runner.run Parser.Assertion.assertions assertions
-                        |> Result.map (Logic.AssertionGraph.fromAssertions >> GraphViz.GraphEvaluation.toDOTString)
-            in
-            case dotProducerResult of
-                Ok dotProducer ->
-                    ( { assertions = assertions
+        ToggleModusTollens ->
+            ( { oldModel | attemptModusTollens = not attemptModusTollens }, lastValidAssertions |> assertionGraph (not attemptModusTollens) |> sendDOT )
+
+        UpdateAssertions assertionsText ->
+            case Parser.Runner.run Parser.Assertion.assertions assertionsText of
+                Ok assertions ->
+                    ( { assertionsText = assertionsText
                       , errors = Nothing
-                      , lastValidDotProducer = Just dotProducer
+                      , lastValidAssertions = assertions
+                      , attemptModusTollens = attemptModusTollens
                       }
-                    , sendDOT (dotProducer Fresh)
+                    , assertions |> assertionGraph attemptModusTollens |> sendDOT
                     )
 
                 Err errs ->
-                    ( { assertions = assertions
-                      , errors = Just errs
-                      , lastValidDotProducer = lastValidDotProducer
+                    ( { oldModel
+                        | errors = Just errs
+                        , assertionsText = assertionsText
                       }
-                    , sendDOT
-                        (case lastValidDotProducer of
-                            Just producer ->
-                                producer Stale
-
-                            Nothing ->
-                                ""
-                        )
+                    , lastValidAssertions |> assertionGraph attemptModusTollens |> sendDOT
                     )
 
 
@@ -134,7 +152,7 @@ topMenuBarView =
 
 
 view : Model -> Html Msg
-view { assertions, errors } =
+view { assertionsText, errors, attemptModusTollens } =
     div []
         [ topMenuBarView
         , div
@@ -150,10 +168,14 @@ view { assertions, errors } =
                         , style "font-weight" "bold"
                         , style "color" "#80ffd0"
                         , style "margin-left" "6px"
-                        , value assertions
+                        , value assertionsText
                         , onInput UpdateAssertions
                         ]
                         []
+                    , div []
+                        [ input [ type_ "checkbox", checked attemptModusTollens, onClick ToggleModusTollens ] []
+                        , label [] [ text "Try Modus Tollens (Graphs get Busy)" ]
+                        ]
                     ]
                 , errors
                     |> Maybe.map errorsView

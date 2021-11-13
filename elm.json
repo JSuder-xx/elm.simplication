@@ -12,6 +12,7 @@
             "elm/parser": "1.1.0",
             "elm-community/array-extra": "2.4.0",
             "elm-community/list-extra": "8.5.1",
+            "elm-community/maybe-extra": "5.2.1",
             "folkertdev/elm-state": "3.0.1"
         },
         "indirect": {

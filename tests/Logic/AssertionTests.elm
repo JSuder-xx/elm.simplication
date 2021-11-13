@@ -32,24 +32,24 @@ suite =
             [ test "empty array of assertions returns empty symbol table" <|
                 expect [] []
             , test "returns x is ETrue with proposition x = true" <|
-                expect [ ( "x", ETrue ) ] [ TruthOfProposition "x" True ]
+                expect [ ( "x", ETrue ) ] [ AssertProposition "x" True ]
             , test "returns x is EFalse with proposition x = false" <|
-                expect [ ( "x", EFalse ) ] [ TruthOfProposition "x" False ]
+                expect [ ( "x", EFalse ) ] [ AssertProposition "x" False ]
             , test "returns empty with an untriggered implication" <|
                 expect [] [ Implication (Proposition "x") [] ]
             , test "returns expected with triggered implication" <|
-                expect [ ( "x", ETrue ), ( "y", ETrue ) ] [ TruthOfProposition "x" True, Implication (Proposition "x") [ ( "y", True ) ] ]
+                expect [ ( "x", ETrue ), ( "y", ETrue ) ] [ AssertProposition "x" True, Implication (Proposition "x") [ ( "y", True ) ] ]
             , test "returns expected with triggered implication resulting in setting x to itself" <|
-                expect [ ( "x", ETrue ) ] [ TruthOfProposition "x" True, Implication (Proposition "x") [ ( "x", True ) ] ]
+                expect [ ( "x", ETrue ) ] [ AssertProposition "x" True, Implication (Proposition "x") [ ( "x", True ) ] ]
             , test "returns expected with triggered implication resulting in contradiction" <|
-                expect [ ( "x", EContradiction ) ] [ TruthOfProposition "x" True, Implication (Proposition "x") [ ( "x", False ) ] ]
+                expect [ ( "x", EContradiction ) ] [ AssertProposition "x" True, Implication (Proposition "x") [ ( "x", False ) ] ]
             , test "returns expected with syllogism" <|
                 expect
                     [ ( "x", ETrue )
                     , ( "y", ETrue )
                     , ( "z", ETrue )
                     ]
-                    [ TruthOfProposition "x" True
+                    [ AssertProposition "x" True
                     , Implication (Proposition "x") [ ( "y", True ) ]
                     , Implication (Proposition "y") [ ( "z", True ) ]
                     ]
@@ -61,7 +61,7 @@ suite =
                     , ( "d", ETrue )
                     , ( "e", ETrue )
                     ]
-                    [ TruthOfProposition "a" True
+                    [ AssertProposition "a" True
                     , Implication (Proposition "a") [ ( "b", True ) ]
                     , Implication (Proposition "b") [ ( "c", True ) ]
                     , Implication (Proposition "c") [ ( "d", True ) ]

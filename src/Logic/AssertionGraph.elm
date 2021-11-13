@@ -3,7 +3,7 @@ module Logic.AssertionGraph exposing (NodeType(..), fromAssertions)
 import Data.Graph exposing (Graph, NodeId)
 import Dict exposing (Dict)
 import Logic.Assertion as A exposing (Assertion(..))
-import Logic.BooleanExpression as BE exposing (BooleanExpression(..))
+import Logic.BooleanExpression as BE exposing (BooleanExpression(..), PropositionTruth)
 import Logic.Evaluation exposing (Evaluation(..))
 import State as S
 
@@ -51,6 +51,7 @@ insertNodeType nodeType operator expression =
             ( newNodeId, ( symbolTable, newGraph, propositionDict ) )
 
 
+insertAssertion : BooleanExpression -> StateM NodeId
 insertAssertion expr =
     insertNodeType AssertionNode "Assert" expr
 
@@ -115,8 +116,8 @@ insertExpressionIfNotExists e =
             insertOperatorFromExpressions "Or" innerExpressions
 
 
-insertConsequent : ( String, Bool ) -> StateM NodeId
-insertConsequent ( proposition, truth ) =
+insertPropositionTruth : PropositionTruth -> StateM NodeId
+insertPropositionTruth ( proposition, truth ) =
     if truth then
         insertPropositionIfNotExists proposition
 
@@ -141,7 +142,7 @@ toUnit =
 assertionS : Assertion -> StateM ()
 assertionS assertion =
     case assertion of
-        TruthOfProposition p positive ->
+        AssertProposition p positive ->
             let
                 expr =
                     Proposition p
@@ -155,7 +156,7 @@ assertionS assertion =
             insertAssertion expr
                 |> S.andThen
                     (\assertNodeId ->
-                        insertConsequent ( p, positive )
+                        insertPropositionTruth ( p, positive )
                             |> S.andThen
                                 (\propNodeId ->
                                     insertEdge assertNodeId propNodeId
@@ -176,7 +177,7 @@ assertionS assertion =
                                         |> S.andThen
                                             (\_ ->
                                                 -- Consequent nodes
-                                                S.traverse insertConsequent consequents
+                                                S.traverse insertPropositionTruth consequents
                                                     |> S.andThen
                                                         (edgesFanOut thenNodeId)
                                             )

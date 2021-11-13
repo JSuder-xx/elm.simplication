@@ -1,7 +1,13 @@
-module Logic.BooleanExpression exposing (BooleanExpression(..), evaluate)
+module Logic.BooleanExpression exposing (BooleanExpression(..), PropositionTruth, evaluate, fromPrositionTruthConjunctions, toPropositionTruthConjunctions)
 
 import Dict exposing (Dict)
 import Logic.Evaluation exposing (Evaluation(..))
+import Maybe exposing (Maybe(..))
+import Maybe.Extra as ME
+
+
+type alias PropositionTruth =
+    ( String, Bool )
 
 
 type BooleanExpression
@@ -9,6 +15,65 @@ type BooleanExpression
     | And (List BooleanExpression)
     | Not BooleanExpression
     | Or (List BooleanExpression)
+
+
+fromPrositionTruthConjunctions : List PropositionTruth -> BooleanExpression
+fromPrositionTruthConjunctions propTruths =
+    propTruths
+        |> List.map
+            (\( p, t ) ->
+                Proposition p
+                    |> (if t then
+                            identity
+
+                        else
+                            Not
+                       )
+            )
+        |> (\props ->
+                case props of
+                    [ single ] ->
+                        single
+
+                    _ ->
+                        And props
+           )
+
+
+toPropositionTruthConjunctions : BooleanExpression -> Maybe (List PropositionTruth)
+toPropositionTruthConjunctions be =
+    case be of
+        Proposition p ->
+            Just [ ( p, True ) ]
+
+        Not (Not innerBE) ->
+            toPropositionTruthConjunctions innerBE
+
+        Not (Proposition p) ->
+            Just [ ( p, False ) ]
+
+        -- DeMorgans Theorem
+        Not (Or innerBEs) ->
+            innerBEs
+                |> List.map Not
+                |> List.map toPropositionTruthConjunctions
+                |> ME.combine
+                |> Maybe.map List.concat
+
+        Or [ single ] ->
+            toPropositionTruthConjunctions single
+
+        And [ single ] ->
+            toPropositionTruthConjunctions single
+
+        And innerBEs ->
+            innerBEs
+                |> List.map toPropositionTruthConjunctions
+                |> ME.combine
+                |> Maybe.map List.concat
+
+        _ ->
+            Nothing
 
 
 evaluate : Dict String Evaluation -> BooleanExpression -> Evaluation

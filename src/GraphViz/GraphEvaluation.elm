@@ -1,4 +1,4 @@
-module GraphViz.GraphEvaluation exposing (Freshness(..), toDOTString)
+module GraphViz.GraphEvaluation exposing (toDOTString)
 
 import Data.Graph exposing (Edge(..), Graph, Node(..), NodeId, edges, nodeId, nodes)
 import Logic.AssertionGraph exposing (NodeType(..))
@@ -100,13 +100,8 @@ joinLines =
     String.join "\n"
 
 
-type Freshness
-    = Fresh
-    | Stale
-
-
-toDOTString : Graph ( Evaluation, NodeType ) -> Freshness -> String
-toDOTString graph freshness =
+toDOTString : Graph ( Evaluation, NodeType ) -> String
+toDOTString graph =
     let
         legendNode str evaluation =
             genericNode { id = "__" ++ str ++ "__", label = str, evaluation = evaluation, shape = "ellipse", fontSize = "10" }
@@ -126,14 +121,7 @@ toDOTString graph freshness =
         , "subgraph clusterMain {"
         , quotedProperties
             [ ( "label", "Your Graph" )
-            , ( "bgcolor"
-              , case freshness of
-                    Stale ->
-                        "#c0a0a0"
-
-                    Fresh ->
-                        "white"
-              )
+            , ( "bgcolor", "white" )
             ]
         , graph |> nodes |> List.map nodeToString |> joinLines
         , graph |> edges |> List.map edgeToString |> joinLines

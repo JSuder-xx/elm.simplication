@@ -7,9 +7,9 @@ import Parser.BooleanExpression
 import Parser.Tokens as Tokens exposing (whitespace)
 
 
-truthOfProposition : Parser Assertion
-truthOfProposition =
-    consequent |> Parser.map (\( p, t ) -> TruthOfProposition p t)
+assertProposition : Parser Assertion
+assertProposition =
+    consequent |> Parser.map (\( p, t ) -> AssertProposition p t)
 
 
 consequent : Parser ( String, Bool )
@@ -51,7 +51,7 @@ assertion =
         |. whitespace
         |= oneOf
             [ implication
-            , truthOfProposition
+            , assertProposition
             ]
 
 

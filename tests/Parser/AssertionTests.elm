@@ -25,13 +25,13 @@ suite =
             [ test "fails on an empty string" <|
                 expectFailure ""
             , parsesCorrectly "x" <|
-                TruthOfProposition "x" True
+                AssertProposition "x" True
             , parsesCorrectly "# This is a comment\nx" <|
-                TruthOfProposition "x" True
+                AssertProposition "x" True
             , parsesCorrectly "x\n# This is a comment" <|
-                TruthOfProposition "x" True
+                AssertProposition "x" True
             , parsesCorrectly "not y" <|
-                TruthOfProposition "y" False
+                AssertProposition "y" False
             , parsesCorrectly "if x then y" <|
                 Implication (Proposition "x") [ ( "y", True ) ]
             , parsesCorrectly "if x then y, z" <|
@@ -67,10 +67,10 @@ suite =
             [ test "fails on an empty string" <|
                 expectFailure ""
             , parsesCorrectly "x" <|
-                [ TruthOfProposition "x" True ]
+                [ AssertProposition "x" True ]
             , parsesCorrectly "x not y" <|
-                [ TruthOfProposition "x" True, TruthOfProposition "y" False ]
+                [ AssertProposition "x" True, AssertProposition "y" False ]
             , parsesCorrectly "x\nnot y" <|
-                [ TruthOfProposition "x" True, TruthOfProposition "y" False ]
+                [ AssertProposition "x" True, AssertProposition "y" False ]
             ]
         ]
