@@ -1,10 +1,11 @@
-module Logic.Assertion exposing (Assertion(..), applyAssertions, expandWithModusTollens)
+module Logic.Assertion exposing (Assertion(..), evaluateAssertions, expandWithModusTollens, propositionNames)
 
 import Dict exposing (Dict)
 import Logic.BooleanExpression as BE exposing (BooleanExpression, PropositionTruth, toPropositionTruthConjunctions)
 import Logic.Evaluation as E exposing (Evaluation(..))
 import Maybe exposing (Maybe(..))
 import Maybe.Extra
+import Set exposing (Set)
 
 
 type Assertion
@@ -50,8 +51,8 @@ expandWithModusTollens =
         )
 
 
-applyProposition : SymbolTable -> PropositionTruth -> Maybe SymbolTable
-applyProposition symbolTable ( prop, truth ) =
+evaluateProposition : SymbolTable -> PropositionTruth -> Maybe SymbolTable
+evaluateProposition symbolTable ( prop, truth ) =
     case Dict.get prop symbolTable of
         Nothing ->
             Just (Dict.insert prop (E.fromBool truth) symbolTable)
@@ -79,31 +80,31 @@ applyProposition symbolTable ( prop, truth ) =
                     Nothing
 
 
-applyAssertion : SymbolTable -> Assertion -> Maybe SymbolTable
-applyAssertion symbolTable assertion =
+evaluateAssertion : SymbolTable -> Assertion -> Maybe SymbolTable
+evaluateAssertion symbolTable assertion =
     case assertion of
         AssertProposition prop truth ->
-            applyProposition symbolTable ( prop, truth )
+            evaluateProposition symbolTable ( prop, truth )
 
         Implication antecedent consequents ->
             case BE.evaluate symbolTable antecedent of
                 ETrue ->
-                    applyList symbolTable applyProposition consequents
+                    evaluateList symbolTable evaluateProposition consequents
 
                 _ ->
                     Nothing
 
 
-applyList : SymbolTable -> (SymbolTable -> a -> Maybe SymbolTable) -> List a -> Maybe SymbolTable
-applyList originalTable assert assertions =
+evaluateList : SymbolTable -> (SymbolTable -> a -> Maybe SymbolTable) -> List a -> Maybe SymbolTable
+evaluateList originalTable eval items =
     let
         fold assertion accum =
-            assert (Tuple.first accum) assertion
+            eval (Tuple.first accum) assertion
                 |> Maybe.map (\t -> ( t, True ))
                 |> Maybe.withDefault accum
 
         ( resultTable, anyChanges ) =
-            assertions |> List.foldl fold ( originalTable, False )
+            items |> List.foldl fold ( originalTable, False )
     in
     if anyChanges then
         Just resultTable
@@ -112,8 +113,8 @@ applyList originalTable assert assertions =
         Nothing
 
 
-applyAssertions : SymbolTable -> List Assertion -> SymbolTable
-applyAssertions original assertions =
+evaluateAssertions : List Assertion -> SymbolTable
+evaluateAssertions assertions =
     let
         recurse accum lastTableMaybe =
             case lastTableMaybe of
@@ -121,6 +122,22 @@ applyAssertions original assertions =
                     accum
 
                 Just lastTable ->
-                    recurse lastTable (applyList lastTable applyAssertion assertions)
+                    recurse lastTable (evaluateList lastTable evaluateAssertion assertions)
     in
-    recurse original (Just original)
+    recurse Dict.empty (Just Dict.empty)
+
+
+assertionPropositionNames : Assertion -> Set String
+assertionPropositionNames a =
+    case a of
+        AssertProposition p _ ->
+            Set.singleton p
+
+        Implication be consequents ->
+            Set.union (BE.propositionNames be)
+                (consequents |> List.foldl (\( c, _ ) -> \s -> Set.insert c s) Set.empty)
+
+
+propositionNames : List Assertion -> Set String
+propositionNames =
+    List.map assertionPropositionNames >> List.foldl Set.union Set.empty

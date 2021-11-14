@@ -190,7 +190,7 @@ fromAssertions assertions =
     let
         initialState : State
         initialState =
-            ( A.applyAssertions Dict.empty assertions, Data.Graph.empty, Dict.empty )
+            ( A.evaluateAssertions assertions, Data.Graph.empty, Dict.empty )
     in
     S.finalState initialState (S.traverse assertionS assertions)
         |> (\( _, graph, _ ) -> graph)

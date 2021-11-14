@@ -2,7 +2,7 @@ module Logic.AssertionTests exposing (..)
 
 import Dict exposing (Dict)
 import Expect exposing (..)
-import Logic.Assertion exposing (Assertion(..), applyAssertions)
+import Logic.Assertion exposing (Assertion(..), evaluateAssertions)
 import Logic.BooleanExpression exposing (BooleanExpression(..))
 import Logic.Evaluation exposing (Evaluation(..))
 import Test exposing (..)
@@ -23,11 +23,11 @@ table propValues =
 
 suite : Test
 suite =
-    describe "Assertion.applyAssertions"
+    describe "Assertion.evaluateAssertions"
         [ describe "with empty symbol table" <|
             let
                 expect propValues assertions _ =
-                    Expect.equal (table propValues) <| applyAssertions Dict.empty <| assertions
+                    Expect.equal (table propValues) <| evaluateAssertions assertions
             in
             [ test "empty array of assertions returns empty symbol table" <|
                 expect [] []

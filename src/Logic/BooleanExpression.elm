@@ -1,9 +1,10 @@
-module Logic.BooleanExpression exposing (BooleanExpression(..), PropositionTruth, evaluate, fromPrositionTruthConjunctions, toPropositionTruthConjunctions)
+module Logic.BooleanExpression exposing (BooleanExpression(..), PropositionTruth, evaluate, fromPrositionTruthConjunctions, propositionNames, toPropositionTruthConjunctions)
 
 import Dict exposing (Dict)
 import Logic.Evaluation exposing (Evaluation(..))
 import Maybe exposing (Maybe(..))
 import Maybe.Extra as ME
+import Set exposing (Set)
 
 
 type alias PropositionTruth =
@@ -115,3 +116,19 @@ evaluate table term =
 
         Or booleanExpressions ->
             tests booleanExpressions [ EContradiction, ETrue, EUnknown ] EFalse
+
+
+propositionNames : BooleanExpression -> Set String
+propositionNames be =
+    case be of
+        Proposition p ->
+            Set.singleton p
+
+        And innerBEs ->
+            innerBEs |> List.map propositionNames |> List.foldl Set.union Set.empty
+
+        Not inner ->
+            propositionNames inner
+
+        Or innerBEs ->
+            innerBEs |> List.map propositionNames |> List.foldl Set.union Set.empty

@@ -35,6 +35,7 @@ problemToString problem =
             "?"
 
 
+deadEndsToStrings : List { row : Int, col : Int, problem : Problem } -> List ( String, List String )
 deadEndsToStrings =
     let
         toInt { col, row } =

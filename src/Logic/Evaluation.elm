@@ -1,4 +1,4 @@
-module Logic.Evaluation exposing (Evaluation(..), fromBool, toBool)
+module Logic.Evaluation exposing (Evaluation(..), fromBool, toBool, toString)
 
 
 type Evaluation
@@ -28,3 +28,19 @@ toBool ev =
 
         _ ->
             Nothing
+
+
+toString : Evaluation -> String
+toString e =
+    case e of
+        EUnknown ->
+            "Unknown"
+
+        EFalse ->
+            "False"
+
+        ETrue ->
+            "True"
+
+        EContradiction ->
+            "Contradiction"

@@ -2,18 +2,22 @@ port module Main exposing (main)
 
 import Browser
 import Css exposing (marginLeft, px, rgb)
+import Dict
 import GraphViz.GraphEvaluation exposing (GraphRenderConfiguration)
 import GraphViz.Orientation as Orientation exposing (Orientation(..))
 import Html exposing (caption)
-import Html.Styled exposing (Html, a, div, input, label, li, p, span, text, textarea, toUnstyled, ul)
+import Html.Styled exposing (Html, a, div, input, label, li, p, span, table, td, text, textarea, th, toUnstyled, tr, ul)
 import Html.Styled.Attributes exposing (checked, cols, css, rows, type_, value)
 import Html.Styled.Events exposing (onClick, onInput)
+import Html.Styled.Lazy
 import Interactions.Page exposing (page)
-import Logic.Assertion
+import Logic.Assertion exposing (evaluateAssertions, expandWithModusTollens, propositionNames)
 import Logic.AssertionExamples exposing (examples)
 import Logic.AssertionGraph
+import Logic.Evaluation as Evaluation exposing (Evaluation(..))
 import Parser.Assertion
 import Parser.Runner
+import Set
 
 
 main : Program () Model Msg
@@ -129,11 +133,6 @@ errorsView errors =
         ]
 
 
-emptyDiv : Html msg
-emptyDiv =
-    div [] []
-
-
 rightSpacing : Css.Style
 rightSpacing =
     Css.marginRight (px 8)
@@ -168,8 +167,43 @@ checkbox current click caption =
         ]
 
 
+symbolTableView : Bool -> List Logic.Assertion.Assertion -> Html a
+symbolTableView attemptModusTollens assertions =
+    let
+        fromEvaluations =
+            evaluateAssertions
+                (if attemptModusTollens then
+                    expandWithModusTollens assertions
+
+                 else
+                    assertions
+                )
+
+        fromNames =
+            propositionNames assertions |> Set.toList |> List.map (\p -> ( p, EUnknown )) |> Dict.fromList
+
+        symbolTable =
+            Dict.union fromEvaluations fromNames
+    in
+    table
+        [ css [ Css.display Css.inlineBlock, Css.marginLeft (px 16) ] ]
+        (tr []
+            ([ "Proposition", "Truth" ] |> List.map (\t -> th [ css [ Css.textAlign Css.left, rightSpacing ] ] [ text t ]))
+            :: (symbolTable
+                    |> Dict.toList
+                    |> List.map
+                        (\( proposition, truth ) ->
+                            tr [ css [ Css.nthChild "even" [ Css.backgroundColor (rgb 224 224 224) ] ] ]
+                                [ td [] [ text proposition ]
+                                , td [] [ truth |> Evaluation.toString |> text ]
+                                ]
+                        )
+               )
+        )
+
+
 view : Model -> Html Msg
-view { assertionsText, errors, attemptModusTollens, graphConfiguration } =
+view { assertionsText, errors, attemptModusTollens, graphConfiguration, lastValidAssertions } =
     page
         { foreignLinks =
             [ { caption = "My Home Page", url = "https://jsuder-xx.github.io" }
@@ -202,7 +236,7 @@ view { assertionsText, errors, attemptModusTollens, graphConfiguration } =
                     ]
                 , errors
                     |> Maybe.map errorsView
-                    |> Maybe.withDefault emptyDiv
+                    |> Maybe.withDefault (Html.Styled.Lazy.lazy2 symbolTableView attemptModusTollens lastValidAssertions)
                 ]
             ]
         }

@@ -1,11 +1,10 @@
 module Interactions.Page exposing (page)
 
--- import Html exposing (Html)
-
 import Css exposing (float, left, px, rgb)
 import Html exposing (caption)
 import Html.Styled exposing (Html, a, div, nav, text)
 import Html.Styled.Attributes exposing (css, href, target)
+import Html.Styled.Lazy
 
 
 heightOfTopBar : number
@@ -49,7 +48,7 @@ topMenuBarView links =
 page : { foreignLinks : List { caption : String, url : String }, body : List (Html msg) } -> Html msg
 page { foreignLinks, body } =
     div []
-        [ topMenuBarView foreignLinks
+        [ Html.Styled.Lazy.lazy topMenuBarView foreignLinks
         , div
             [ css [ Css.marginTop (px (heightOfTopBar + 1)), Css.padding (px 6) ] ]
             body
