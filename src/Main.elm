@@ -185,21 +185,25 @@ symbolTableView attemptModusTollens assertions =
         symbolTable =
             Dict.union fromEvaluations fromNames
     in
-    table
-        [ css [ Css.display Css.inlineBlock, Css.marginLeft (px 16) ] ]
-        (tr []
-            ([ "Proposition", "Truth" ] |> List.map (\t -> th [ css [ Css.textAlign Css.left, rightSpacing ] ] [ text t ]))
-            :: (symbolTable
-                    |> Dict.toList
-                    |> List.map
-                        (\( proposition, truth ) ->
-                            tr [ css [ Css.nthChild "even" [ Css.backgroundColor (rgb 224 224 224) ] ] ]
-                                [ td [] [ text proposition ]
-                                , td [] [ truth |> Evaluation.toString |> text ]
-                                ]
-                        )
-               )
-        )
+    if Dict.isEmpty symbolTable then
+        div [] []
+
+    else
+        table
+            [ css [ Css.display Css.inlineBlock, Css.marginLeft (px 16) ] ]
+            (tr []
+                ([ "Proposition", "Truth" ] |> List.map (\t -> th [ css [ Css.textAlign Css.left, rightSpacing ] ] [ text t ]))
+                :: (symbolTable
+                        |> Dict.toList
+                        |> List.map
+                            (\( proposition, truth ) ->
+                                tr [ css [ Css.nthChild "even" [ Css.backgroundColor (rgb 224 224 224) ] ] ]
+                                    [ td [] [ text proposition ]
+                                    , td [] [ truth |> Evaluation.toString |> text ]
+                                    ]
+                            )
+                   )
+            )
 
 
 view : Model -> Html Msg
