@@ -12,11 +12,82 @@
       padding: 0;
       margin: 0;
     }
+
+    .title {
+      position: absolute;
+      font-size: 72px;
+      font-weight: bold;
+    }
+    .title.s {
+      color: #37f;
+      left: 20px;
+    }
+    .title.imple {
+      color: #12a;
+      left: 60px;
+      animation-name: fadeOut;
+      animation-duration: 0.8s;
+      animation-delay: 1.2s;
+      animation-timing-function: ease-in-out;
+      animation-fill-mode: forwards;
+    }
+
+    @keyframes slideUp {
+      from {top: 80px}
+      to {top: 0px}
+    }
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+    .title.implication {
+      left: 60px;
+      top: 80px;
+      background-color: white;
+      animation-name: slideUp;
+      animation-duration: 0.8s;
+      animation-delay: 1.2s;
+      animation-timing-function: ease-in-out;
+      animation-fill-mode: forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+      
+    }
+    .please-wait {
+      position: absolute;
+      font-size: 24px;
+      left: 22px;
+      top: 100px;
+      opacity: 0;
+      animation-name: fadeIn;
+      animation-duration: 0.5s;
+      animation-delay: 2.0s;
+      animation-timing-function: ease-in-out;
+      animation-fill-mode: forwards;
+    }
   </style>
 </head>
 <body>
   <div id="elm-app"></div>
-  <div id="diagram">Waiting for graphing library...</div>
+  <div id="diagram">
+    <div style="position: relative;">
+      <div class="title s">S</div>
+      <div class="title imple">imple</div>
+      <div class="title implication">implication</div>
+      <div class="please-wait">Waiting for the graphing library to load...</div>
+    </div>      
+  </div>
   <script type="text/javascript">
     const app = Elm.Main.init({
         node: document.getElementById('elm-app')
