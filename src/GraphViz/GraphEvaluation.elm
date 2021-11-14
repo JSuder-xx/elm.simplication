@@ -1,6 +1,7 @@
-module GraphViz.GraphEvaluation exposing (toDOTString)
+module GraphViz.GraphEvaluation exposing (GraphRenderConfiguration, toDOTString)
 
 import Data.Graph exposing (Edge(..), Graph, Node(..), NodeId, edges, nodeId, nodes)
+import GraphViz.Orientation exposing (Orientation(..))
 import Logic.AssertionGraph exposing (NodeType(..))
 import Logic.Evaluation exposing (Evaluation(..))
 
@@ -58,29 +59,6 @@ genericNode { id, label, evaluation, shape, fontSize } =
         |> String.join ""
 
 
-nodeToString : Node ( Evaluation, NodeType ) -> String
-nodeToString (Node nodeId ( text, ( evaluation, nodeType ) )) =
-    genericNode
-        { id = nodeIdToString nodeId
-        , label = text
-        , evaluation = evaluation
-        , fontSize = "11"
-        , shape =
-            case nodeType of
-                PropositionNode ->
-                    "rect"
-
-                BooleanOperatorNode ->
-                    "diamond"
-
-                ImplicationNode ->
-                    "rarrow"
-
-                AssertionNode ->
-                    "octagon"
-        }
-
-
 nodeIdToString : NodeId -> String
 nodeIdToString =
     nodeId >> String.fromInt
@@ -100,28 +78,74 @@ joinLines =
     String.join "\n"
 
 
-toDOTString : Graph ( Evaluation, NodeType ) -> String
-toDOTString graph =
+type alias GraphRenderConfiguration =
+    { orientation : Orientation, showLegend : Bool }
+
+
+toDOTString : GraphRenderConfiguration -> Graph ( Evaluation, NodeType ) -> String
+toDOTString { orientation, showLegend } graph =
     let
         legendNode str evaluation =
-            genericNode { id = "__" ++ str ++ "__", label = str, evaluation = evaluation, shape = "ellipse", fontSize = "10" }
+            genericNode { id = "__" ++ str ++ "__", label = str, evaluation = evaluation, shape = "rect", fontSize = "10" }
+
+        implicationTypeShape =
+            case orientation of
+                Horizontal ->
+                    "rarrow"
+
+                Vertical ->
+                    "invtriangle"
+
+        nodeToString : Node ( Evaluation, NodeType ) -> String
+        nodeToString (Node nodeId ( text, ( evaluation, nodeType ) )) =
+            genericNode
+                { id = nodeIdToString nodeId
+                , label = text
+                , evaluation = evaluation
+                , fontSize = "11"
+                , shape =
+                    case nodeType of
+                        PropositionNode ->
+                            "rect"
+
+                        BooleanOperatorNode ->
+                            "diamond"
+
+                        ImplicationNode ->
+                            implicationTypeShape
+
+                        AssertionNode ->
+                            "ellipse"
+                }
     in
     joinLines
         [ "digraph {"
-        , "subgraph clusterLegend {"
-        , quotedProperties [ ( "label", "Legend" ), ( "bgcolor", "#e0e0ff" ) ]
-        , legendNode "Unknown" EUnknown
-        , legendNode "False" EFalse
-        , legendNode "True" ETrue
-        , legendNode "Contradiction" EContradiction
-        , "}"
+        , if not showLegend then
+            ""
+
+          else
+            [ "subgraph clusterLegend {"
+            , quotedProperties [ ( "label", "Legend" ), ( "bgcolor", "#e0e0ff" ) ]
+            , legendNode "Unknown" EUnknown
+            , legendNode "False" EFalse
+            , legendNode "True" ETrue
+            , legendNode "Contradiction" EContradiction
+            , "}"
+            ]
+                |> joinLines
         , quotedProperties
-            [ ( "rankdir", "LR" )
+            [ ( "rankdir"
+              , case orientation of
+                    Horizontal ->
+                        "LR"
+
+                    Vertical ->
+                        "TB"
+              )
             ]
         , "subgraph clusterMain {"
         , quotedProperties
-            [ ( "label", "Your Graph" )
-            , ( "bgcolor", "white" )
+            [ ( "bgcolor", "white" )
             ]
         , graph |> nodes |> List.map nodeToString |> joinLines
         , graph |> edges |> List.map edgeToString |> joinLines

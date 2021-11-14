@@ -1,10 +1,14 @@
 port module Main exposing (main)
 
 import Browser
-import GraphViz.GraphEvaluation
-import Html exposing (Html, div, input, label, li, nav, p, text, textarea, ul)
-import Html.Attributes exposing (checked, cols, rows, style, target, type_, value)
-import Html.Events exposing (onCheck, onClick, onInput)
+import Css exposing (marginLeft, px, rgb)
+import GraphViz.GraphEvaluation exposing (GraphRenderConfiguration)
+import GraphViz.Orientation as Orientation exposing (Orientation(..))
+import Html exposing (caption)
+import Html.Styled exposing (Html, a, div, input, label, li, p, span, text, textarea, toUnstyled, ul)
+import Html.Styled.Attributes exposing (checked, cols, css, rows, type_, value)
+import Html.Styled.Events exposing (onClick, onInput)
+import Interactions.Page exposing (page)
 import Logic.Assertion
 import Logic.AssertionExamples exposing (examples)
 import Logic.AssertionGraph
@@ -16,7 +20,7 @@ main : Program () Model Msg
 main =
     Browser.element
         { init = init
-        , view = view
+        , view = view >> toUnstyled
         , update = update
         , subscriptions = \_ -> Sub.none
         }
@@ -28,6 +32,7 @@ port sendDOT : String -> Cmd msg
 type alias Model =
     { assertionsText : String
     , attemptModusTollens : Bool
+    , graphConfiguration : GraphRenderConfiguration
     , errors : Maybe (List ( String, List String ))
     , lastValidAssertions : List Logic.Assertion.Assertion
     }
@@ -37,6 +42,10 @@ init : a -> ( Model, Cmd msg )
 init _ =
     ( { assertionsText = ""
       , attemptModusTollens = False
+      , graphConfiguration =
+            { orientation = Horizontal
+            , showLegend = True
+            }
       , lastValidAssertions = []
       , errors = Nothing
       }
@@ -47,10 +56,12 @@ init _ =
 type Msg
     = UpdateAssertions String
     | ToggleModusTollens
+    | ToggleOrientation
+    | ToggleLegend
 
 
-assertionGraph : Bool -> List Logic.Assertion.Assertion -> String
-assertionGraph attemptModusTollens =
+assertionGraph : Bool -> GraphRenderConfiguration -> List Logic.Assertion.Assertion -> String
+assertionGraph attemptModusTollens config =
     (if attemptModusTollens then
         Logic.Assertion.expandWithModusTollens
 
@@ -58,24 +69,44 @@ assertionGraph attemptModusTollens =
         identity
     )
         >> Logic.AssertionGraph.fromAssertions
-        >> GraphViz.GraphEvaluation.toDOTString
+        >> GraphViz.GraphEvaluation.toDOTString config
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ({ lastValidAssertions, attemptModusTollens } as oldModel) =
+update msg ({ lastValidAssertions, attemptModusTollens, graphConfiguration } as oldModel) =
     case msg of
+        ToggleOrientation ->
+            let
+                newConfiguration =
+                    { graphConfiguration | orientation = Orientation.toggle graphConfiguration.orientation }
+            in
+            ( { oldModel | graphConfiguration = newConfiguration }
+            , lastValidAssertions |> assertionGraph attemptModusTollens newConfiguration |> sendDOT
+            )
+
+        ToggleLegend ->
+            let
+                newConfiguration =
+                    { graphConfiguration | showLegend = not graphConfiguration.showLegend }
+            in
+            ( { oldModel | graphConfiguration = newConfiguration }
+            , lastValidAssertions |> assertionGraph attemptModusTollens newConfiguration |> sendDOT
+            )
+
         ToggleModusTollens ->
-            ( { oldModel | attemptModusTollens = not attemptModusTollens }, lastValidAssertions |> assertionGraph (not attemptModusTollens) |> sendDOT )
+            ( { oldModel | attemptModusTollens = not attemptModusTollens }
+            , lastValidAssertions |> assertionGraph (not attemptModusTollens) graphConfiguration |> sendDOT
+            )
 
         UpdateAssertions assertionsText ->
             case Parser.Runner.run Parser.Assertion.assertions assertionsText of
                 Ok assertions ->
-                    ( { assertionsText = assertionsText
-                      , errors = Nothing
-                      , lastValidAssertions = assertions
-                      , attemptModusTollens = attemptModusTollens
+                    ( { oldModel
+                        | assertionsText = assertionsText
+                        , errors = Nothing
+                        , lastValidAssertions = assertions
                       }
-                    , assertions |> assertionGraph attemptModusTollens |> sendDOT
+                    , assertions |> assertionGraph attemptModusTollens graphConfiguration |> sendDOT
                     )
 
                 Err errs ->
@@ -83,7 +114,7 @@ update msg ({ lastValidAssertions, attemptModusTollens } as oldModel) =
                         | errors = Just errs
                         , assertionsText = assertionsText
                       }
-                    , lastValidAssertions |> assertionGraph attemptModusTollens |> sendDOT
+                    , lastValidAssertions |> assertionGraph attemptModusTollens graphConfiguration |> sendDOT
                     )
 
 
@@ -98,9 +129,9 @@ errorsView errors =
                     (rest |> List.map (\orError -> li [] [ text <| "Or " ++ orError ]))
                 ]
     in
-    div [ style "margin-left" "10px" ]
+    div [ css [ marginLeft <| px 10 ] ]
         [ p [] [ text "There are some issues with how the assertions are written. If a graph is displayed it represents the most recent correctly formed assertions." ]
-        , ul [ style "color" "#a00000" ] (errors |> List.map errorView)
+        , ul [ css [ Css.color (rgb 255 0 0) ] ] (errors |> List.map errorView)
         ]
 
 
@@ -109,72 +140,70 @@ emptyDiv =
     div [] []
 
 
+rightSpacing : Css.Style
+rightSpacing =
+    Css.marginRight (px 8)
+
+
+hyperlink : List (Html.Styled.Attribute msg) -> List (Html msg) -> Html msg
+hyperlink =
+    Html.Styled.styled a
+        [ Css.color (rgb 0 0 255)
+        , Css.textDecoration Css.none
+        , rightSpacing
+        , Css.cursor Css.pointer
+        , Css.hover [ Css.textDecoration Css.underline ]
+        ]
+
+
 exampleLink : ( String, String ) -> Html Msg
 exampleLink ( caption, example ) =
-    Html.a
-        [ example |> UpdateAssertions |> onClick
-        , style "color" "#00f"
-        , style "text-decoration" "underline"
-        , style "cursor" "pointer"
-        , style "margin-right" "16px"
-        ]
-        [ Html.text caption ]
+    hyperlink [ example |> UpdateAssertions |> onClick ] [ text caption ]
 
 
-topMenuBarView : Html a
-topMenuBarView =
-    let
-        menuLink caption url =
-            Html.a
-                [ target "_blank"
-                , Html.Attributes.href url
-                , style "float" "left"
-                , style "color" "white"
-                , style "text-align" "center"
-                , style "padding" "10px 16px"
-                , style "text-decoration" "none"
-                , style "font-size" "14px"
-                ]
-                [ text caption ]
-    in
-    nav
-        [ style "position" "fixed"
-        , style "top" "0"
-        , style "height" "36px"
-        , style "width" "100%"
-        , style "background-color" "#333"
-        , style "overflow" "hidden"
-        , style "font-family" "sans-serif"
-        ]
-        [ menuLink "My Home Page" "https://jsuder-xx.github.io"
-        , menuLink "On GitHub" "https://github.com/JSuder-xx/elm.simplication"
+checkbox : Bool -> msg -> String -> Html msg
+checkbox current click caption =
+    span [ css [ rightSpacing ] ]
+        [ input
+            [ type_ "checkbox"
+            , checked current
+            , onClick click
+            ]
+            []
+        , label [ onClick click, css [ Css.cursor Css.pointer ] ] [ text caption ]
         ]
 
 
 view : Model -> Html Msg
-view { assertionsText, errors, attemptModusTollens } =
-    div []
-        [ topMenuBarView
-        , div
-            [ style "margin-top" "37px" ]
-            [ div [ style "margin-bottom" "8px" ]
-                (Html.span [ style "margin-right" "8px" ] [ text "Examples:" ] :: (examples |> List.map exampleLink))
-            , div [ style "display" "flex" ]
+view { assertionsText, errors, attemptModusTollens, graphConfiguration } =
+    page
+        { foreignLinks =
+            [ { caption = "My Home Page", url = "https://jsuder-xx.github.io" }
+            , { caption = "On GitHub", url = "https://github.com/JSuder-xx/elm.simplication" }
+            ]
+        , body =
+            [ div [ css [ Css.marginBottom (px 6) ] ]
+                (span [ css [ rightSpacing ] ] [ text "Examples:" ] :: (examples |> List.map exampleLink))
+            , div [ css [ Css.displayFlex ] ]
                 [ div []
                     [ textarea
                         [ rows 16
                         , cols 90
-                        , style "background-color" "black"
-                        , style "font-weight" "bold"
-                        , style "color" "#80ffd0"
-                        , style "margin-left" "6px"
+                        , css
+                            [ Css.backgroundColor (rgb 0 0 0)
+                            , Css.fontWeight Css.bold
+                            , Css.color (rgb 128 255 160)
+                            ]
                         , value assertionsText
                         , onInput UpdateAssertions
                         ]
                         []
                     , div []
-                        [ input [ type_ "checkbox", checked attemptModusTollens, onClick ToggleModusTollens ] []
-                        , label [] [ text "Try Modus Tollens (Graphs get Busy)" ]
+                        [ checkbox attemptModusTollens ToggleModusTollens "Try Modus Tollens (Graphs get busy)"
+                        , checkbox graphConfiguration.showLegend ToggleLegend "Show Legend"
+                        , hyperlink [ onClick ToggleOrientation ]
+                            [ graphConfiguration.orientation |> Orientation.toggle |> Orientation.toString |> (\new -> "Change to " ++ new ++ " Layout") |> text
+                            ]
                         ]
                     ]
                 , errors
@@ -182,4 +211,4 @@ view { assertionsText, errors, attemptModusTollens } =
                     |> Maybe.withDefault emptyDiv
                 ]
             ]
-        ]
+        }
