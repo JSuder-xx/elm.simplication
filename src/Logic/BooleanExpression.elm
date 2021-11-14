@@ -100,7 +100,7 @@ evaluate table term =
             Dict.get prop table |> Maybe.withDefault EUnknown
 
         And booleanExpressions ->
-            tests booleanExpressions [ EContradiction, EUnknown, EFalse ] ETrue
+            tests booleanExpressions [ EContradiction, EFalse, EUnknown ] ETrue
 
         Not innerTerm ->
             case evaluate table innerTerm of
