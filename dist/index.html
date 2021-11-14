@@ -97,9 +97,26 @@
     let renderDOT = dot => {
       dotStringReceivedBeforeVizInit = dot;
     }; 
+
+    const notifyAppHashChange = () => {
+      const hash = location.hash || "";      
+      app.ports.onHashChange.send(hash.startsWith("#") ? hash.slice(1) : hash);
+    };
+    
+    // listen to app
     app.ports.sendDOT.subscribe(dot => {
       renderDOT(dot);
     });
+    app.ports.sendHash.subscribe(function(hash) {      
+      history.pushState({}, '', new URL('#' + hash, location));
+      notifyAppHashChange();
+    });    
+
+    // listen to browser, forward on to app
+    window.addEventListener('popstate', function () {
+      notifyAppHashChange();        
+    });
+    notifyAppHashChange();
   </script>   
   <script src="viz.js"></script>
   <script src="full.render.js"></script>         

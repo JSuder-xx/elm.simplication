@@ -11,13 +11,16 @@ import Html.Styled.Attributes exposing (checked, cols, css, rows, type_, value)
 import Html.Styled.Events exposing (onClick, onInput)
 import Html.Styled.Lazy
 import Interactions.Page exposing (page)
-import Logic.Assertion exposing (evaluateAssertions, expandWithModusTollens, propositionNames)
+import Interop.URL
+import Logic.Assertion exposing (Assertion(..), evaluateAssertions, expandWithModusTollens, propositionNames)
 import Logic.AssertionExamples exposing (examples)
 import Logic.AssertionGraph
 import Logic.Evaluation as Evaluation exposing (Evaluation(..))
 import Parser.Assertion
 import Parser.Runner
 import Set
+import Url
+import Url.Parser
 
 
 main : Program () Model Msg
@@ -26,11 +29,22 @@ main =
         { init = init
         , view = view >> toUnstyled
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         }
 
 
 port sendDOT : String -> Cmd msg
+
+
+port sendHash : String -> Cmd msg
+
+
+port onHashChange : (String -> msg) -> Sub msg
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    onHashChange (Interop.URL.fromString >> AssertionsFromUrlHash)
 
 
 type alias Model =
@@ -62,6 +76,7 @@ type Msg
     | ToggleModusTollens
     | ToggleOrientation
     | ToggleLegend
+    | AssertionsFromUrlHash (Maybe String)
 
 
 graphDOTString : Bool -> GraphRenderConfiguration -> List Logic.Assertion.Assertion -> String
@@ -81,8 +96,39 @@ update msg ({ lastValidAssertions, attemptModusTollens, graphConfiguration } as 
     let
         lastValidAssertionsWithNewModel model =
             ( model, lastValidAssertions |> graphDOTString model.attemptModusTollens model.graphConfiguration |> sendDOT )
+
+        updateAssertions assertionsText =
+            case Parser.Runner.run Parser.Assertion.assertions assertionsText of
+                Ok assertions ->
+                    ( { oldModel
+                        | assertionsText = assertionsText
+                        , errors = Nothing
+                        , lastValidAssertions = assertions
+                      }
+                    , Cmd.batch [ assertionsText |> Interop.URL.toString |> sendHash, assertions |> graphDOTString attemptModusTollens graphConfiguration |> sendDOT ]
+                    )
+
+                Err errs ->
+                    ( { oldModel
+                        | errors = Just errs
+                        , assertionsText = assertionsText
+                      }
+                    , Cmd.none
+                    )
     in
     case msg of
+        AssertionsFromUrlHash assertionsTextMaybe ->
+            case assertionsTextMaybe of
+                Nothing ->
+                    ( oldModel, Cmd.none )
+
+                Just assertionsText ->
+                    if assertionsText == oldModel.assertionsText then
+                        ( oldModel, Cmd.none )
+
+                    else
+                        updateAssertions assertionsText
+
         ToggleOrientation ->
             lastValidAssertionsWithNewModel
                 { oldModel
@@ -97,23 +143,7 @@ update msg ({ lastValidAssertions, attemptModusTollens, graphConfiguration } as 
             lastValidAssertionsWithNewModel { oldModel | attemptModusTollens = not attemptModusTollens }
 
         UpdateAssertions assertionsText ->
-            case Parser.Runner.run Parser.Assertion.assertions assertionsText of
-                Ok assertions ->
-                    ( { oldModel
-                        | assertionsText = assertionsText
-                        , errors = Nothing
-                        , lastValidAssertions = assertions
-                      }
-                    , assertions |> graphDOTString attemptModusTollens graphConfiguration |> sendDOT
-                    )
-
-                Err errs ->
-                    ( { oldModel
-                        | errors = Just errs
-                        , assertionsText = assertionsText
-                      }
-                    , Cmd.none
-                    )
+            updateAssertions assertionsText
 
 
 errorsView : List ( String, List String ) -> Html a
