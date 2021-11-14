@@ -60,8 +60,8 @@ type Msg
     | ToggleLegend
 
 
-assertionGraph : Bool -> GraphRenderConfiguration -> List Logic.Assertion.Assertion -> String
-assertionGraph attemptModusTollens config =
+graphDOTString : Bool -> GraphRenderConfiguration -> List Logic.Assertion.Assertion -> String
+graphDOTString attemptModusTollens config =
     (if attemptModusTollens then
         Logic.Assertion.expandWithModusTollens
 
@@ -74,29 +74,23 @@ assertionGraph attemptModusTollens config =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ({ lastValidAssertions, attemptModusTollens, graphConfiguration } as oldModel) =
+    let
+        lastValidAssertionsWithNewModel model =
+            ( model, lastValidAssertions |> graphDOTString model.attemptModusTollens model.graphConfiguration |> sendDOT )
+    in
     case msg of
         ToggleOrientation ->
-            let
-                newConfiguration =
-                    { graphConfiguration | orientation = Orientation.toggle graphConfiguration.orientation }
-            in
-            ( { oldModel | graphConfiguration = newConfiguration }
-            , lastValidAssertions |> assertionGraph attemptModusTollens newConfiguration |> sendDOT
-            )
+            lastValidAssertionsWithNewModel
+                { oldModel
+                    | graphConfiguration = { graphConfiguration | orientation = Orientation.toggle graphConfiguration.orientation }
+                }
 
         ToggleLegend ->
-            let
-                newConfiguration =
-                    { graphConfiguration | showLegend = not graphConfiguration.showLegend }
-            in
-            ( { oldModel | graphConfiguration = newConfiguration }
-            , lastValidAssertions |> assertionGraph attemptModusTollens newConfiguration |> sendDOT
-            )
+            lastValidAssertionsWithNewModel
+                { oldModel | graphConfiguration = { graphConfiguration | showLegend = not graphConfiguration.showLegend } }
 
         ToggleModusTollens ->
-            ( { oldModel | attemptModusTollens = not attemptModusTollens }
-            , lastValidAssertions |> assertionGraph (not attemptModusTollens) graphConfiguration |> sendDOT
-            )
+            lastValidAssertionsWithNewModel { oldModel | attemptModusTollens = not attemptModusTollens }
 
         UpdateAssertions assertionsText ->
             case Parser.Runner.run Parser.Assertion.assertions assertionsText of
@@ -106,7 +100,7 @@ update msg ({ lastValidAssertions, attemptModusTollens, graphConfiguration } as 
                         , errors = Nothing
                         , lastValidAssertions = assertions
                       }
-                    , assertions |> assertionGraph attemptModusTollens graphConfiguration |> sendDOT
+                    , assertions |> graphDOTString attemptModusTollens graphConfiguration |> sendDOT
                     )
 
                 Err errs ->
@@ -114,7 +108,7 @@ update msg ({ lastValidAssertions, attemptModusTollens, graphConfiguration } as 
                         | errors = Just errs
                         , assertionsText = assertionsText
                       }
-                    , lastValidAssertions |> assertionGraph attemptModusTollens graphConfiguration |> sendDOT
+                    , Cmd.none
                     )
 
 
