@@ -1,4 +1,4 @@
-module Parser.Tokens exposing (and, comma, ifP, is, leftParen, not, or, proposition, rightParen, thenP, whitespace)
+module Parser.Tokens exposing (and, comma, ifP, leftParen, not, or, proposition, rightParen, thenP, whitespace)
 
 import Parser exposing ((|.), (|=), Parser, Problem(..), chompWhile, keyword, oneOf, succeed, symbol, variable)
 import Set
@@ -41,7 +41,7 @@ whitespace =
 
 reserved : Set.Set String
 reserved =
-    Set.fromList [ "not", "and", "or", "is", "if", "then" ]
+    Set.fromList [ "not", "and", "or", "if", "then" ]
 
 
 proposition : Parser String
@@ -72,11 +72,6 @@ and =
 or : Parser ()
 or =
     keyword_ "or"
-
-
-is : Parser ()
-is =
-    keyword_ "is"
 
 
 ifP : Parser ()
