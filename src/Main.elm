@@ -6,7 +6,7 @@ import Dict
 import GraphViz.GraphEvaluation exposing (GraphRenderConfiguration)
 import GraphViz.Orientation as Orientation exposing (Orientation(..))
 import Html exposing (caption)
-import Html.Styled exposing (Html, a, div, input, label, li, p, span, table, td, text, textarea, th, toUnstyled, tr, ul)
+import Html.Styled exposing (Html, a, div, input, label, li, p, span, table, td, text, textarea, th, toUnstyled, tr)
 import Html.Styled.Attributes exposing (checked, cols, css, rows, type_, value)
 import Html.Styled.Events exposing (onClick, onInput)
 import Html.Styled.Keyed
