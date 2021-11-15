@@ -9,6 +9,7 @@ import Html exposing (caption)
 import Html.Styled exposing (Html, a, div, input, label, li, p, span, table, td, text, textarea, th, toUnstyled, tr, ul)
 import Html.Styled.Attributes exposing (checked, cols, css, rows, type_, value)
 import Html.Styled.Events exposing (onClick, onInput)
+import Html.Styled.Keyed
 import Html.Styled.Lazy
 import Interactions.Page exposing (page)
 import Interop.URL
@@ -19,8 +20,6 @@ import Logic.Evaluation as Evaluation exposing (Evaluation(..))
 import Parser.Assertion
 import Parser.Runner
 import Set
-import Url
-import Url.Parser
 
 
 main : Program () Model Msg
@@ -149,17 +148,28 @@ update msg ({ lastValidAssertions, attemptModusTollens, graphConfiguration } as 
 errorsView : List ( String, List String ) -> Html a
 errorsView errors =
     let
-        errorView : ( String, List String ) -> Html a
+        errorView : ( String, List String ) -> ( String, Html a )
         errorView ( first, rest ) =
-            li []
+            ( first
+            , li []
                 [ text first
-                , ul []
-                    (rest |> List.map (\orError -> li [] [ text <| "Or " ++ orError ]))
+                , Html.Styled.Keyed.ul []
+                    (rest
+                        |> List.map
+                            (\orError ->
+                                let
+                                    str =
+                                        "Or " ++ orError
+                                in
+                                ( str, li [] [ text str ] )
+                            )
+                    )
                 ]
+            )
     in
     div [ css [ marginLeft <| px 10 ] ]
         [ p [] [ text "There are some issues with how the assertions are written. If a graph is displayed it represents the most recent correctly formed assertions." ]
-        , ul [ css [ Css.color (rgb 255 0 0) ] ] (errors |> List.map errorView)
+        , Html.Styled.Keyed.ul [ css [ Css.color (rgb 255 0 0) ] ] (errors |> List.map errorView)
         ]
 
 
