@@ -18,7 +18,7 @@ xyzSymbolTable =
 table : List ( String, Evaluation ) -> Dict String Evaluation
 table propValues =
     propValues
-        |> List.foldl (\( p, e ) -> \d -> Dict.insert p e d) Dict.empty
+        |> List.foldl (\( p, e ) -> Dict.insert p e) Dict.empty
 
 
 suite : Test

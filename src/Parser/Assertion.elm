@@ -31,7 +31,7 @@ consequentHelp consequents currentConsequent =
         [ succeed identity
             |. Tokens.comma
             |= consequent
-            |> andThen (\newConsequent -> consequentHelp (currentConsequent :: consequents) newConsequent)
+            |> andThen (consequentHelp (currentConsequent :: consequents))
         , Parser.lazy <| \_ -> succeed <| List.reverse <| currentConsequent :: consequents
         ]
 

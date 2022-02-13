@@ -1,49 +1,99 @@
 module Data.GraphTests exposing (..)
 
-import Data.Graph exposing (Node(..), edgesFrom, empty, insertEdge, insertNode, insertNodes, nodeId, nodes)
-import Debug exposing (toString)
+import Data.Graph exposing (Node(..), empty, insertNode, insertNodes, nodeById, nodeId)
 import Expect
+import Fuzz exposing (..)
+import List
+import List.Extra
 import Test exposing (..)
+import Tuple
+
+
+nodeLabel : Int -> String
+nodeLabel n =
+    "Node " ++ String.fromInt (9999 - n)
+
+
+nodeData : Int -> ( String, String )
+nodeData n =
+    let
+        s =
+            nodeLabel n
+    in
+    ( s, s )
+
+
+nodesInRange : Int -> Int -> List ( String, String )
+nodesInRange lo hi =
+    List.range lo hi |> List.map nodeData
+
+
+addTo : List a -> a -> List a
+addTo lst v =
+    v :: lst
 
 
 suite : Test
 suite =
-    let
-        nodeValues =
-            List.range 100 104 |> List.map (\n -> ( toString n, "?" ))
-
-        ( graphWith100To104, nodeIds ) =
-            insertNodes nodeValues empty
-    in
     describe "Graph"
         [ describe "insertNode" <|
-            let
-                ( graphWithFirst, firstNodeId ) =
-                    insertNode ( "Hello", "a" ) empty
+            [ fuzz string "id of the first node is always 1" <|
+                \s ->
+                    let
+                        ( _, id ) =
+                            insertNode ( s, s ) empty
+                    in
+                    Expect.equal 1 (nodeId id)
+            , fuzz (intRange 1 100) "inserting n nodes always yields monotonically increasing ids" <|
+                \num ->
+                    let
+                        nums =
+                            List.range 1 num
 
-                ( graphWithSecond, secondNodeId ) =
-                    insertNode ( "Goodbye", "a" ) graphWithFirst
-            in
-            [ test "id of first node is 1" <| \_ -> Expect.equal 1 (nodeId firstNodeId)
-            , test "id of second node is 2" <| \_ -> Expect.equal 2 (nodeId secondNodeId)
-            , test "graphWithSecond has two nodes" <| \_ -> Expect.equal 2 (graphWithSecond |> nodes |> List.length)
+                        fold n ( lastGraph, ids ) =
+                            insertNode (nodeData n) lastGraph |> Tuple.mapSecond (nodeId >> addTo ids)
+                    in
+                    Expect.equal nums (nums |> List.foldl fold ( empty, [] ) |> Tuple.second |> List.reverse)
             ]
         , describe "insertNodes" <|
-            [ test "nodeIds are in the correct order" <| \_ -> Expect.equal [ 1, 2, 3, 4, 5 ] (nodeIds |> List.map nodeId)
-            , test "graph contains the length of nodes inserted" <| \_ -> Expect.equal 5 (graphWith100To104 |> nodes |> List.length)
-            , test "graph contains the nodes inserted" <| \_ -> Expect.equal [ "100", "101", "102", "103", "104" ] (graphWith100To104 |> nodes |> List.map (\(Node _ ( str, _ )) -> str))
+            [ fuzz (intRange 1 50) "nodeIds are ever increasing" <|
+                \num ->
+                    Expect.equal
+                        (insertNodes (nodesInRange 101 (100 + num)) empty |> Tuple.second |> List.map nodeId)
+                        (List.range 1 num)
             ]
-        , describe "insertEdge" <|
-            case nodeIds of
-                nodeOneId :: nodeTwoId :: nodeThreeId :: _ ->
-                    [ test "inserting a single edge from 1 and then getting edges from 1" <|
-                        \_ -> Expect.equal 1 (empty |> insertEdge nodeOneId nodeTwoId |> edgesFrom nodeOneId |> List.length)
-                    , test "inserting a two edges from 1 and then getting edges from 1" <|
-                        \_ -> Expect.equal 2 (empty |> insertEdge nodeOneId nodeTwoId |> insertEdge nodeOneId nodeThreeId |> edgesFrom nodeOneId |> List.length)
-                    , test "inserting a two edges from 1 and then getting edges from 2" <|
-                        \_ -> Expect.equal 0 (empty |> insertEdge nodeOneId nodeTwoId |> insertEdge nodeOneId nodeThreeId |> edgesFrom nodeTwoId |> List.length)
-                    ]
+        , describe "nodeById" <|
+            [ let
+                ( base, count ) =
+                    ( 100, 200 )
+              in
+              fuzz (intRange 0 (count - 1)) "always returns the appropriate node" <|
+                \nth ->
+                    let
+                        ( graphWith100To130, nodeIds ) =
+                            insertNodes (nodesInRange base (base + count - 1)) empty
 
-                _ ->
-                    []
+                        nthNodeMaybe =
+                            List.Extra.getAt nth nodeIds |> Maybe.andThen (\n -> nodeById n graphWith100To130)
+                    in
+                    case nthNodeMaybe of
+                        Just (Node _ ( label, _ )) ->
+                            Expect.equal label (nodeLabel (nth + base))
+
+                        _ ->
+                            Expect.fail "Expecting to find the node"
+            ]
+
+        -- , describe "insertEdge" <|
+        --     case nodeIds of
+        --         nodeOneId :: nodeTwoId :: nodeThreeId :: _ ->
+        --             [ test "inserting a single edge from 1 and then getting edges from 1" <|
+        --                 \_ -> Expect.equal 1 (empty |> insertEdge nodeOneId nodeTwoId |> edgesFrom nodeOneId |> List.length)
+        --             , test "inserting a two edges from 1 and then getting edges from 1" <|
+        --                 \_ -> Expect.equal 2 (empty |> insertEdge nodeOneId nodeTwoId |> insertEdge nodeOneId nodeThreeId |> edgesFrom nodeOneId |> List.length)
+        --             , test "inserting a two edges from 1 and then getting edges from 2" <|
+        --                 \_ -> Expect.equal 0 (empty |> insertEdge nodeOneId nodeTwoId |> insertEdge nodeOneId nodeThreeId |> edgesFrom nodeTwoId |> List.length)
+        --             ]
+        --         _ ->
+        --             []
         ]

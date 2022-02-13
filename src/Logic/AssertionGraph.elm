@@ -158,9 +158,7 @@ assertionS assertion =
                     (\assertNodeId ->
                         insertPropositionTruth ( p, positive )
                             |> S.andThen
-                                (\propNodeId ->
-                                    insertEdge assertNodeId propNodeId
-                                )
+                                (insertEdge assertNodeId)
                     )
 
         Implication expr consequents ->

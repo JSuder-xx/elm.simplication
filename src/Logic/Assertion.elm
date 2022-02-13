@@ -133,9 +133,10 @@ assertionPropositionNames a =
         AssertProposition p _ ->
             Set.singleton p
 
-        Implication be consequents ->
-            Set.union (BE.propositionNames be)
-                (consequents |> List.foldl (\( c, _ ) -> \s -> Set.insert c s) Set.empty)
+        Implication booleanExpression consequents ->
+            Set.union
+                (BE.propositionNames booleanExpression)
+                (consequents |> List.foldl (Tuple.first >> Set.insert) Set.empty)
 
 
 propositionNames : List Assertion -> Set String
